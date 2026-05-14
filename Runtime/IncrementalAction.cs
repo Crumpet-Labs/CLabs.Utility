@@ -4,8 +4,6 @@ namespace CLabs.Utility
 {
     public class IncrementalAction
     {
-        public string LOGString = "Completed";
-        
         public IncrementalAction(int count, Action action = null)
         {
             if (action == null)

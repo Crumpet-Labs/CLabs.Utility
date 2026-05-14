@@ -1,116 +1,58 @@
-# CLabs.Utility -- Guide
+# CLabs.Utility — Guide
 
 ## Overview
 
-CLabs.Utility is the foundation layer for every Core package. It has zero dependencies beyond UnityEngine and Newtonsoft.Json, and provides the shared building blocks that higher-level packages rely on: entity-scoped registries, serializable collections, observable properties, extension methods, Inspector attributes, and general-purpose helpers.
-
-## Registry\<TKey, TValue\>
-
-An abstract dictionary wrapper designed for entity-scoped lookups. Packages subclass it to create strongly typed registries (e.g., `StatRegistry : Registry<StatDefinition, StatInstance>`).
-
-### API
-
-| Member | Description |
-|--------|-------------|
-| `Register(TKey, TValue)` | Adds an entry and returns an `IDisposable` that removes it on dispose |
-| `Get(TKey)` | Returns the value for a key; throws if missing |
-| `TryGet(TKey, out TValue)` | Safe lookup returning `bool` |
-| `TryGetValue(TKey, out TValue)` | Alias for `TryGet` |
-| `Get(IEnumerable<TKey>)` | Batch lookup; silently skips missing keys |
-| `Contains(TKey)` | Checks if a key is registered |
-| `Values` | All registered values |
-| `Keys` | All registered keys |
-| `Count` | Number of entries |
-
-### Usage
-
-```csharp
-// Define a concrete registry
-public sealed class WeaponRegistry : Registry<string, WeaponData> { }
-
-// Register and auto-cleanup
-var registry = new WeaponRegistry();
-IDisposable handle = registry.Register("sword", swordData);
-
-WeaponData weapon = registry.Get("sword");
-
-// Unregister when done
-handle.Dispose();
-```
-
-The disposable registration pattern is central to Core's architecture. Bridge mediators collect registration handles into a `DisposableCollection` and dispose them all on teardown.
+CLabs.Utility is the engine-agnostic foundation layer for every Core package. It has zero package dependencies (one external: Newtonsoft.Json for `BinaryConvert`). It provides the shared building blocks that higher-level packages rely on: entity identity, colour, disposables, registries, pub/sub, resource providers, reflection helpers, and general-purpose helpers.
 
 ---
 
-## SerializableDictionary\<TKey, TValue\>
+## OwnerId
 
-A generic dictionary that Unity can serialize through the Inspector. It implements `ISerializationCallbackReceiver` to sync between parallel `List<TKey>` / `List<TValue>` backing fields and an in-memory `Dictionary<TKey, TValue>`.
-
-### API
-
-| Member | Description |
-|--------|-------------|
-| `Dictionary` | The underlying `Dictionary<TKey, TValue>` |
-| `Add(TKey, TValue)` | Add an entry |
-| `Remove(TKey)` | Remove an entry |
-| `TryGetValue(TKey, out TValue)` | Safe lookup |
-| `ContainsKey(TKey)` | Check for key existence |
-| `Clear()` | Remove all entries |
-| `this[TKey]` | Indexer for get/set |
-| `Count` | Number of entries |
-| `Keys` / `Values` | Enumerables over keys and values |
-
-### Usage
+A plain-C# readonly struct for cross-engine entity identity. Wraps a single `int`. Converts implicitly from `int` and `char`.
 
 ```csharp
-[Serializable]
-public class MyConfig : ScriptableObject {
-    [SerializeField] private SerializableDictionary<string, int> m_Scores = new();
-    
-    public int GetScore(string name) {
-        m_Scores.TryGetValue(name, out var score);
-        return score;
-    }
-}
+OwnerId id = 42;
+int raw = id;          // implicit back to int
+OwnerId fromChar = 'A';
 ```
-
-A custom property drawer (`SerializableDictionaryDrawer`) renders key-value pairs in the Inspector.
 
 ---
 
-## Property\<T\>
+## Color
 
-A serializable wrapper around a value with a dirty flag for change tracking. The dirty flag is set whenever `Value` is assigned and must be manually consumed via `DirtyFlagConsumed()`.
+Engine-agnostic RGBA colour (floats in `[0, 1]`). Create via factory methods; convert to engine-native types through platform adapters (e.g. `ToUnityColor()` in `CLabs.Utility.Unity`).
 
-### API
+### Factories
 
-| Member | Description |
+| Method | Description |
 |--------|-------------|
-| `Value` | Get or set the wrapped value; setting marks the property as dirty |
-| `IsDirty` | `true` if the value has been set since the last consume |
-| `DirtyFlagConsumed()` | Resets the dirty flag to `false` |
+| `FromRgb(r, g, b, a)` | From float components |
+| `FromRgb255(r, g, b, a)` | From 0–255 byte components |
+| `FromHex(string)` | Parses `#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA` |
+| `FromHsv(h, s, v, a)` | Hue in degrees `[0, 360)`, S/V in `[0, 1]` |
+| `FromHsl(h, s, l, a)` | Hue in degrees `[0, 360)`, S/L in `[0, 1]` |
+| `FromCmyk(c, m, y, k, a)` | CMYK components in `[0, 1]` |
 
-### Usage
+### Properties
 
-```csharp
-var health = new Property<float>(100f);
+| Property | Description |
+|----------|-------------|
+| `R`, `G`, `B`, `A` | Float components in `[0, 1]` |
+| `R8`, `G8`, `B8`, `A8` | Byte components `[0, 255]` |
 
-health.Value = 80f;
-Debug.Log(health.IsDirty); // true
+### Conversions out
 
-// Presenter reads and consumes
-if (health.IsDirty) {
-    UpdateHealthBar(health.Value);
-    health.DirtyFlagConsumed();
-}
-```
+| Method | Description |
+|--------|-------------|
+| `ToHex()` | `"#RRGGBBAA"` |
+| `ToHexRgb()` | `"#RRGGBB"` (alpha dropped) |
+| `ToHsv()` | Returns `(H, S, V)` tuple |
+| `ToHsl()` | Returns `(H, S, L)` tuple |
+| `ToCmyk()` | Returns `(C, M, Y, K)` tuple |
 
-### Typed Properties
+### Named constants
 
-Two sealed convenience types are provided:
-
-- **`BoolProperty`** -- `Property<bool>`
-- **`Vector2Property`** -- `Property<Vector2>`
+`White`, `Black`, `Transparent`, `Red`, `Green`, `Blue`, `Yellow`, `Cyan`, `Magenta`, `Grey`.
 
 ---
 
@@ -121,8 +63,8 @@ Two sealed convenience types are provided:
 Wraps a single `Action` as `IDisposable`. Used throughout Core for cleanup callbacks, especially from `Registry.Register()`.
 
 ```csharp
-var cleanup = new Disposable(() => Debug.Log("Cleaned up"));
-cleanup.Dispose(); // prints "Cleaned up"
+IDisposable cleanup = new Disposable(() => Console.WriteLine("Cleaned up"));
+cleanup.Dispose();
 ```
 
 ### DisposableCollection
@@ -134,9 +76,106 @@ var collection = new DisposableCollection();
 collection.Add(registry.Register("a", dataA));
 collection.Add(registry.Register("b", dataB));
 
-// Teardown -- removes both entries
+// Teardown — removes both entries
 collection.Dispose();
 ```
+
+---
+
+## Registry\<TKey, TValue\>
+
+An abstract dictionary wrapper. Packages subclass it to create strongly-typed registries.
+
+### API
+
+| Member | Description |
+|--------|-------------|
+| `Register(TKey, TValue)` | Adds an entry; returns an `IDisposable` that removes it on dispose |
+| `Get(TKey)` | Returns the value; throws if missing |
+| `TryGet(TKey, out TValue)` | Safe lookup returning `bool` |
+| `TryGetValue(TKey, out TValue)` | Alias for `TryGet` |
+| `Get(IEnumerable<TKey>)` | Batch lookup; silently skips missing keys |
+| `Contains(TKey)` | Checks if a key is registered |
+| `Values` / `Keys` / `Count` | Enumeration and count |
+| `OnRegistered` / `OnUnregistered` | Events fired on registration/removal |
+
+### Usage
+
+```csharp
+public sealed class WeaponRegistry : Registry<string, WeaponData> { }
+
+var registry = new WeaponRegistry();
+IDisposable handle = registry.Register("sword", swordData);
+
+WeaponData weapon = registry.Get("sword");
+
+handle.Dispose(); // auto-removes
+```
+
+---
+
+## Pub/Sub (EventService)
+
+A lightweight in-process event bus. Messages are structs keyed by a `(TKey, Type)` pair. Subscriptions return an `IDisposable` that auto-unsubscribes.
+
+### Types
+
+| Type | Role |
+|------|------|
+| `EventService<TKey>` | Concrete bus; implements `IEventService<TKey>` |
+| `EventPublisher<TKey>` | Publish-only facade |
+| `EventSubscriber<TKey>` | Subscribe-only facade |
+| `PubSubFactory<TKey>` | Creates matched publisher/subscriber pairs |
+| `EventReceiver<TKey, TData>` | Binds a key to an `EventMessage<TData>` handler |
+
+### Usage
+
+```csharp
+var service = new EventService<string>();
+var factory = new PubSubFactory<string>(service);
+
+IEventSubscriber<string> subscriber = factory.CreateSubscriber();
+IEventPublisher<string> publisher = factory.CreatePublisher();
+
+IDisposable sub = subscriber.Subscribe(new IEventReceiver<string>[] {
+    new EventReceiver<string, DamageEvent>(
+        ("player", typeof(DamageEvent)),
+        (in DamageEvent e) => Console.WriteLine($"Damage: {e.Amount}")
+    )
+});
+
+publisher.Publish("player", new DamageEvent { Amount = 10 });
+
+sub.Dispose(); // unsubscribes
+```
+
+---
+
+## Resource Providers
+
+A small resource-management abstraction for consuming and granting countable resources.
+
+### IResourceProvider
+
+| Method | Description |
+|--------|-------------|
+| `CanHandle(IDefinition)` | Returns `true` if this provider manages the given resource |
+| `HasResource(IDefinition, int)` | Checks whether sufficient quantity is available |
+| `Consume(IDefinition, int)` | Deducts the quantity |
+| `Grant(IDefinition, int)` | Adds the quantity |
+
+### CompositeResourceProvider
+
+Routes each call to the first `IResourceProvider` in its list that `CanHandle` the resource.
+
+```csharp
+var composite = new CompositeResourceProvider(goldProvider, gemProvider);
+composite.Consume(goldDef, 10);
+```
+
+### IDefinition
+
+Marker interface for resource/item definition types. Requires a `Name` property. Typically implemented by ScriptableObjects in adapters.
 
 ---
 
@@ -152,73 +191,9 @@ collection.Dispose();
 items.Complete(item => item.Initialize());
 ```
 
-### RectTransformExt
-
-| Method | Description |
-|--------|-------------|
-| `SetAnchor(Vector2)` | Sets anchorMin, anchorMax, and pivot to the same point while preserving size |
-| `SetTopAnchor()` | Shorthand for `SetAnchor(0.5, 1)` |
-| `SetTopLeftAnchor()` | Shorthand for `SetAnchor(0, 1)` |
-
-### CameraExtensions
-
-| Method | Description |
-|--------|-------------|
-| `AddLayer(LayerMask)` | Adds a layer to the camera's culling mask |
-| `RemoveLayer(LayerMask)` | Removes a layer from the culling mask |
-| `HasLayer(LayerMask)` | Checks if a layer is in the culling mask |
-| `ExcludeLayer(LayerMask)` | Alias for `RemoveLayer` |
-
----
-
-## Attributes
-
-### [ReadOnly]
-
-Marks a serialized field as non-editable in the Inspector. The field is still visible but greyed out. Backed by a custom `PropertyDrawer` in `Attributes/Editor/ReadOnlyDrawer.cs`.
-
-```csharp
-[SerializeField, ReadOnly] private int m_Id;
-```
-
-### [EditorButton]
-
-Attribute for methods. Exposes a named button in the Inspector that invokes the method when clicked. Backed by a UI Toolkit editor in `Attributes/Editor/EditorButtonUIE.cs`.
-
-```csharp
-[EditorButton("Reset Stats", ResetStats)]
-public void ResetStats() { ... }
-```
-
 ---
 
 ## Utility Classes
-
-### GameObjectUtils
-
-Extension methods on `GameObject`.
-
-| Method | Description |
-|--------|-------------|
-| `ForceComponent<T>()` | Returns the existing component or adds one if missing |
-| `TryDestroyComponent<T>()` | Destroys the component if it exists; returns whether it was found |
-| `SetLayer(int)` | Sets the GameObject's layer |
-
-### TransformUtils
-
-Static helpers and extension methods on `Transform`.
-
-| Method | Description |
-|--------|-------------|
-| `ForceGameObject(string, bool)` | Finds or creates a root GameObject by name; optionally marks it DontDestroyOnLoad |
-| `ForceComponent<T>()` | Extension on Transform -- returns existing or adds a new component |
-| `TryDestroyComponent<T>()` | Extension on Transform -- destroys component if present |
-
-```csharp
-// Ensure a persistent root exists
-var root = TransformUtils.ForceGameObject("Systems", dontDestroyOnLoad: true);
-var manager = root.ForceComponent<AudioManager>();
-```
 
 ### StringUtils
 
@@ -226,8 +201,8 @@ Extension methods on `string`.
 
 | Method | Description |
 |--------|-------------|
-| `ToPropertyName()` | Converts to TitleCase and removes whitespace (`"my field"` -> `"MyField"`) |
-| `ToTitleCase()` | Title-cases the string using current culture |
+| `ToPropertyName()` | TitleCase + remove whitespace (`"my field"` → `"MyField"`) |
+| `ToTitleCase()` | Title-cases using current culture |
 | `RemoveWhiteSpace()` | Strips all spaces |
 
 ### IOUtils
@@ -248,16 +223,7 @@ JSON-to-bytes round-trip using **Newtonsoft.Json**.
 | `ToBytes<T>(this T)` | Serializes an object to UTF-8 JSON bytes |
 | `ToBytes<T>(this string)` | Encodes a JSON string to UTF-8 bytes |
 | `ToJson(this byte[])` | Decodes UTF-8 bytes to a JSON string |
-| `ToObject<T>(this byte[])` | Deserializes UTF-8 bytes to an object |
-
-### Serializer
-
-JSON-to-bytes round-trip using **Unity's JsonUtility**. Classes must be marked `[Serializable]`.
-
-| Method | Description |
-|--------|-------------|
-| `Serialize<T>(this T)` | Serializes to UTF-8 bytes via `JsonUtility.ToJson` |
-| `Deserialize<T>(this byte[])` | Deserializes from UTF-8 bytes via `JsonUtility.FromJson` |
+| `ToObject<T>(this byte[])` | Deserializes UTF-8 bytes to `T` |
 
 ### ReflectionUtilities
 
@@ -268,76 +234,18 @@ Reflection helpers for type discovery.
 | `FindImplementors(this Type)` | Scans all loaded assemblies for types assignable to the given type |
 | `GetConstructorParams(this Type)` | Returns parameter types of the first constructor |
 | `SelectInterfaces(this IEnumerable<Type>)` | Filters to interface types only |
-| `ConvertType(string)` | Maps CLR full type names to C# keyword aliases (`System.Int32` -> `int`) |
-
-### CoroutineUtils
-
-Chainable coroutine building blocks for `StartCoroutine`.
-
-| Method | Description |
-|--------|-------------|
-| `Chain(this IEnumerator[])` | Chains an array of coroutines into a single sequence |
-| `ExecuteCoroutines(this MonoBehaviour, params IEnumerator[])` | Starts multiple coroutines in parallel |
-| `DelaySeconds(Action, float)` | Waits, then invokes an action |
-| `WaitUntil(Func<bool>)` | Yields until predicate is true |
-| `WaitWhile(Func<bool>)` | Yields while predicate is true |
-| `WaitForSeconds(float)` | Yields for a duration (scaled time) |
-| `WaitForSecondsRealtime(float)` | Yields for a duration (unscaled time) |
-| `WaitForUpdate()` | Yields one frame |
-| `WaitForFixedUpdate()` | Yields until next FixedUpdate |
-| `WaitForEndOfFrame()` | Yields until end of frame |
-| `Do(Action)` | Executes an action, then yields one frame |
-
-```csharp
-StartCoroutine(new IEnumerator[] {
-    CoroutineUtils.Do(() => Debug.Log("Start")),
-    CoroutineUtils.WaitForSeconds(2f),
-    CoroutineUtils.Do(() => Debug.Log("Done"))
-}.Chain());
-```
+| `ConvertType(string)` | Maps CLR full type names to C# keyword aliases (`System.Int32` → `int`) |
 
 ### IncrementalAction
 
-A countdown trigger. Initialize with a count; each call to `Decrement()` reduces the counter. When it reaches zero the action fires. Useful for waiting on multiple async completions.
+A countdown trigger. Initialize with a count and an action; each call to `Decrement()` reduces the counter. When it reaches zero the action fires. Useful for waiting on multiple async completions.
 
 ```csharp
-var barrier = new IncrementalAction(3, () => Debug.Log("All loaded"));
-// Called from three separate callbacks:
+var barrier = new IncrementalAction(3, () => Console.WriteLine("All loaded"));
 barrier.Decrement();
 barrier.Decrement();
 barrier.Decrement(); // prints "All loaded"
 ```
-
-### PlayerLoopInjector
-
-Injects a custom update callback into Unity's native PlayerLoop under the `Update` phase. Returns an `IDisposable` that cleanly removes the subsystem on dispose.
-
-```csharp
-struct MyCustomUpdate { }
-
-IDisposable sub = PlayerLoopInjector.InjectUpdate<MyCustomUpdate>(() => {
-    // Runs every frame without a MonoBehaviour
-});
-
-// Stop the update
-sub.Dispose();
-```
-
-The type parameter (`MyCustomUpdate`) acts as a unique tag so the injector can find and remove the correct subsystem later.
-
----
-
-## Editor Utilities
-
-The `Editor/` folder contains Inspector tooling (behind an Editor asmdef):
-
-- **AssetUtilities** -- asset lookup helpers
-- **ScriptableObjectList** -- editor window listing ScriptableObjects
-- **UIToolkitUtils** -- UI Toolkit helper methods
-- **SerializableDictionaryDrawer** -- custom property drawer for `SerializableDictionary`
-- **ReadOnlyDrawer** -- property drawer for `[ReadOnly]`
-- **EditorButtonUIE** -- UI Toolkit inspector for `[EditorButton]`
-- **PropertyDrawer_Bool / PropertyDrawer_Vector2** -- drawers for typed properties
 
 ---
 
@@ -345,4 +253,8 @@ The `Editor/` folder contains Inspector tooling (behind an Editor asmdef):
 
 None. CLabs.Utility is the foundation layer with no Core package dependencies.
 
-External: `UnityEngine`, `Newtonsoft.Json` (for `BinaryConvert`).
+External: `Newtonsoft.Json` (for `BinaryConvert`).
+
+## Assembly
+
+`CLabs.Utility`
