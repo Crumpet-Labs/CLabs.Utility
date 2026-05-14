@@ -1,0 +1,15 @@
+{
+  "name": "com.clabs.utility",
+  "version": "0.1.0",
+  "displayName": "CLabs Utility",
+  "description": "Shared utilities — Registry, Disposable, SerializableDictionary",
+  "shortDescription": "Shared utilities",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.2"
+  },
+  "author": {
+    "name": "Crumpet Labs"
+  },
+  "group": "Foundation"
+}
