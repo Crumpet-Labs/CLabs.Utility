@@ -2,7 +2,7 @@
 
 ## Overview
 
-CLabs.Utility is the engine-agnostic foundation layer for every Core package. It has zero package dependencies (one external: Newtonsoft.Json for `BinaryConvert`). It provides the shared building blocks that higher-level packages rely on: entity identity, colour, disposables, registries, pub/sub, resource providers, reflection helpers, and general-purpose helpers.
+CLabs.Utility is the engine-agnostic foundation layer for every Core package. It has zero package dependencies (one external: Newtonsoft.Json for `BinaryConvert`). It provides the shared building blocks that higher-level packages rely on: entity identity, colour, disposables, registries, resource providers, reflection helpers, and general-purpose helpers.
 
 ---
 
@@ -110,43 +110,6 @@ IDisposable handle = registry.Register("sword", swordData);
 WeaponData weapon = registry.Get("sword");
 
 handle.Dispose(); // auto-removes
-```
-
----
-
-## Pub/Sub (EventService)
-
-A lightweight in-process event bus. Messages are structs keyed by a `(TKey, Type)` pair. Subscriptions return an `IDisposable` that auto-unsubscribes.
-
-### Types
-
-| Type | Role |
-|------|------|
-| `EventService<TKey>` | Concrete bus; implements `IEventService<TKey>` |
-| `EventPublisher<TKey>` | Publish-only facade |
-| `EventSubscriber<TKey>` | Subscribe-only facade |
-| `PubSubFactory<TKey>` | Creates matched publisher/subscriber pairs |
-| `EventReceiver<TKey, TData>` | Binds a key to an `EventMessage<TData>` handler |
-
-### Usage
-
-```csharp
-var service = new EventService<string>();
-var factory = new PubSubFactory<string>(service);
-
-IEventSubscriber<string> subscriber = factory.CreateSubscriber();
-IEventPublisher<string> publisher = factory.CreatePublisher();
-
-IDisposable sub = subscriber.Subscribe(new IEventReceiver<string>[] {
-    new EventReceiver<string, DamageEvent>(
-        ("player", typeof(DamageEvent)),
-        (in DamageEvent e) => Console.WriteLine($"Damage: {e.Amount}")
-    )
-});
-
-publisher.Publish("player", new DamageEvent { Amount = 10 });
-
-sub.Dispose(); // unsubscribes
 ```
 
 ---

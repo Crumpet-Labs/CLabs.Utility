@@ -1,68 +1,100 @@
 # CLabs.Utility
 
-Engine-agnostic foundation utilities used by every Core package — disposables, registries, pub/sub, colour, identity, resource providers, reflection helpers, and general-purpose helpers.
+Engine-agnostic foundation utilities used across the CLabs ecosystem — entity identity, colour, disposables, generic registries, resource providers, reflection helpers, and small general-purpose helpers. Pure .NET, no engine references, no CLabs dependencies.
 
-## What It Provides
+## What it provides
 
-### Identity
-| Type | Description |
-|------|-------------|
-| `OwnerId` | Plain-C# readonly struct for cross-engine entity identity. Implicitly converts to/from `int` and `char`. |
+| Type | Purpose |
+|------|---------|
+| `OwnerId` | Plain `readonly struct` for cross-engine entity identity. Wraps an `int`; implicitly converts to and from `int` / `char`. |
+| `Color` | Engine-agnostic RGBA colour struct (floats `0–1`). Factories for RGB / HSV / HSL / CMYK / Hex; conversions back via `ToHex`, `ToHsv`, `ToHsl`, `ToCmyk`; named constants (`White`, `Red`, `Transparent`, …). |
+| `Registry<TKey, TValue>` | Abstract dictionary wrapper. `Register()` returns an `IDisposable` that auto-removes the entry on dispose; exposes `Get` / `TryGet` / `Contains` / events `OnRegistered` / `OnUnregistered`. |
+| `Disposable` / `DisposableCollection` | Wraps an `Action` as `IDisposable`; aggregates multiple disposables for batch teardown. |
+| `IResourceProvider` / `CompositeResourceProvider` / `IDefinition` | Tiny resource-management abstraction — `CanHandle` / `HasResource` / `Consume` / `Grant`. Composite routes calls to the first matching provider. |
+| `StringUtils` | `ToPropertyName`, `ToTitleCase`, `RemoveWhiteSpace`. |
+| `IOUtils` | `ForceDirectory(string)`, `DeleteFile(string)` — safe filesystem helpers. |
+| `BinaryConvert` | JSON ⇄ bytes round-trip via Newtonsoft.Json. |
+| `ReflectionUtilities` | `FindImplementors`, `GetConstructorParams`, `SelectInterfaces`, `ConvertType`. |
+| `IncrementalAction` | Countdown trigger — fires its action once `Decrement()` has been called N times. |
+| `EnumerableExt.Complete<T>(Action<T>)` | Eagerly iterates a sequence, invoking the action on each element. |
 
-### Colour
-| Type | Description |
-|------|-------------|
-| `Color` | Engine-agnostic RGBA colour struct (floats 0–1). Factory methods: `FromRgb`, `FromRgb255`, `FromHex`, `FromHsv`, `FromHsl`, `FromCmyk`. Conversions: `ToHex`, `ToHexRgb`, `ToHsv`, `ToHsl`, `ToCmyk`. Named constants: `White`, `Black`, `Red`, `Green`, `Blue`, `Yellow`, `Cyan`, `Magenta`, `Grey`, `Transparent`. |
+## Installation
 
-### Disposables
-| Type | Description |
-|------|-------------|
-| `Disposable` | Wraps an `Action` as `IDisposable` for cleanup callbacks |
-| `DisposableCollection` | Aggregates multiple `IDisposable` instances for batch disposal |
+CLabs.Utility is the foundation layer — it has no CLabs dependencies. Install it directly.
 
-### Registries
-| Type | Description |
-|------|-------------|
-| `Registry<TKey, TValue>` | Abstract dictionary wrapper. `Register()` returns an `IDisposable` that auto-removes the entry on dispose. Exposes `Get`, `TryGet`, `TryGetValue`, `Contains`, `Values`, `Keys`, `Count`, and events `OnRegistered`/`OnUnregistered`. |
+### .NET projects
 
-### Pub/Sub (Event Bus)
-| Type | Description |
-|------|-------------|
-| `EventService<TKey>` | Concrete event bus — publishes and subscribes to struct messages keyed by `(TKey, Type)` |
-| `IEventService<TKey>` | Interface for the event bus |
-| `EventPublisher<TKey>` / `IEventPublisher<TKey>` | Publish-only view over an `IEventService` |
-| `EventSubscriber<TKey>` / `IEventSubscriber<TKey>` | Subscribe-only view over an `IEventService` |
-| `PubSubFactory<TKey>` / `IPubSubFactory<TKey>` | Creates matched publisher/subscriber pairs from a shared service |
-| `EventReceiver<TKey, TData>` / `IEventReceiver<TKey>` | Subscription handle carrying a key and delegate |
-| `EventMessage<T>` | `delegate void EventMessage<T>(in T message)` — the message handler signature |
+Clone the repo (or add as a submodule) and reference the project from your `.csproj`:
 
-### Resource Providers
-| Type | Description |
-|------|-------------|
-| `IResourceProvider` | Interface: `CanHandle`, `HasResource`, `Consume`, `Grant` |
-| `IDefinition` | Marker interface for definition types (`Name` string) |
-| `CompositeResourceProvider` | Routes calls to the first provider that can handle a given resource |
+```xml
+<ItemGroup>
+  <ProjectReference Include="path/to/CLabs.Utility/CLabs.Utility.csproj" />
+</ItemGroup>
+```
 
-### Extensions
-| Type | Description |
-|------|-------------|
-| `EnumerableExt` | `Complete<T>(Action<T>)` — eagerly iterates a sequence applying an action to each element |
+Or, once published, via NuGet:
 
-### Utility Classes
-| Type | Description |
-|------|-------------|
-| `StringUtils` | `ToPropertyName()`, `ToTitleCase()`, `RemoveWhiteSpace()` — string extension methods |
-| `IOUtils` | `ForceDirectory(string)`, `DeleteFile(string)` — safe file-system helpers |
-| `BinaryConvert` | JSON-to-bytes round-trip via Newtonsoft.Json: `ToBytes<T>()`, `ToJson()`, `ToObject<T>()` |
-| `ReflectionUtilities` | `FindImplementors(Type)`, `GetConstructorParams(Type)`, `SelectInterfaces()`, `ConvertType(string)` — CLR type-discovery helpers |
-| `IncrementalAction` | Countdown trigger: fires an `Action` after N calls to `Decrement()` |
+```bash
+dotnet add package CLabs.Utility
+```
 
-## Dependencies
+### Dependencies
 
-None. This is the foundation layer.
+- **CLabs**: none. This is the foundation layer.
+- **External**: `Newtonsoft.Json` (only required if you use `BinaryConvert`).
 
-External: `Newtonsoft.Json` (for `BinaryConvert`).
+## Using it
 
-## Assembly
+### Cross-engine entity identity
 
-`CLabs.Utility`
+```csharp
+using CLabs.Utility;
+
+OwnerId player = 1;          // implicit from int
+OwnerId fromChar = 'A';      // implicit from char
+int raw = player;            // implicit back to int
+```
+
+### Engine-agnostic colour
+
+```csharp
+using CLabs.Utility;
+
+var red    = Color.Red;
+var custom = Color.FromHex("#FFB000");
+var hsv    = Color.FromHsv(120f, 1f, 1f);
+string hex = custom.ToHex();   // "#FFB000FF"
+```
+
+### Self-removing registry
+
+```csharp
+public sealed class WeaponRegistry : Registry<string, WeaponData> { }
+
+var registry = new WeaponRegistry();
+IDisposable handle = registry.Register("sword", swordData);
+
+if (registry.TryGet("sword", out var weapon)) {
+    // use it
+}
+
+handle.Dispose();   // entry auto-removed
+```
+
+### Batched cleanup
+
+```csharp
+var collection = new DisposableCollection();
+collection.Add(registry.Register("a", dataA));
+collection.Add(registry.Register("b", dataB));
+
+collection.Dispose();   // disposes both registrations in one call
+```
+
+## Unity users
+
+If you're building a Unity project, install the [CLabs.Unity](https://github.com/Crumpet-Labs/CLabs.Unity) UPM umbrella — it ships Utility together with the rest of the CLabs ecosystem plus the Unity adapters that bridge `Color` / `OwnerId` to their engine-native equivalents. This repo is for plain .NET consumers.
+
+## License
+
+MIT.

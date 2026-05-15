@@ -4,7 +4,7 @@
 
 **Package:** `com.clabs.utility`
 
-Shared utilities — Registry, Disposable, SerializableDictionary
+Engine-agnostic foundation utilities — identity, colour, registries, disposables, resource providers.
 
 ## Assemblies
 
@@ -99,29 +99,6 @@ References: _(none)_
   - `bool HasResource(IDefinition resource, int quantity)`
   - `void Consume(IDefinition resource, int quantity)`
   - `void Grant(IDefinition resource, int quantity)`
-
-### `Runtime/PubSub.cs`
-- **interface IEventReceiver<TKey>**
-- **class EventReceiver<TKey, TData>** : IEventReceiver<TKey>
-- **interface IEventService<TKey>**
-- **class EventService<TKey>** : IEventService<TKey>
-- **interface IEventPublisher<in TKey>**
-- **struct readonly EventPublisher<TKey>** : IEventPublisher<TKey>
-- **interface IEventSubscriber<TKey>**
-- **struct readonly EventSubscriber<TKey>** : IEventSubscriber<TKey>
-- **interface IPubSubFactory<TKey>**
-- **class PubSubFactory<TKey>** : IPubSubFactory<TKey>
-- `delegate void EventMessage<T>(in T message)`
-  - `EventPublisher(IEventService<TKey> service)`
-  - `EventSubscriber(IEventService<TKey> service)`
-  - `PubSubFactory(IEventService<TKey> eventService)`
-  - `Delegate Delegate` *(property)*
-  - `delegate void EventMessage<T>(in T message)`
-  - `IDisposable Subscribe(IEventReceiver<TKey>[] receivers)`
-  - `void Dispose()`
-  - `void Publish<T>(TKey key, in T message)`
-  - `IEventPublisher<TKey> CreatePublisher()`
-  - `IEventSubscriber<TKey> CreateSubscriber()`
 
 ### `Runtime/ReflectionUtilities.cs`
 - **class static ReflectionUtilities**
