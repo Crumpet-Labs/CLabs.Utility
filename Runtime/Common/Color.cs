@@ -4,7 +4,7 @@ using System.Globalization;
 namespace CLabs.Utility {
     /// <summary>
     /// Engine-agnostic colour. Internal representation is RGBA as floats in 0..1.
-    /// Construct via <see cref="FromRgb"/>, <see cref="FromRgb255"/>, <see cref="FromHex"/>,
+    /// Construct via <see cref="FromRGB"/>, <see cref="FromRGB255"/>, <see cref="FromHex"/>,
     /// <see cref="FromHsv"/>, <see cref="FromHsl"/>, or <see cref="FromCmyk"/>. Convert to
     /// engine-native colour types via platform adapters (e.g. CLabs.Utility.Unity's
     /// <c>ToUnityColor()</c>).
@@ -27,12 +27,11 @@ namespace CLabs.Utility {
         public byte B8 => (byte)Math.Clamp(MathF.Round(B * 255f), 0f, 255f);
         public byte A8 => (byte)Math.Clamp(MathF.Round(A * 255f), 0f, 255f);
 
-        // --- Factories ---
 
-        public static Color FromRgb(float r, float g, float b, float a = 1f) =>
+        public static Color FromRGB(float r, float g, float b, float a = 1f) =>
             new(r, g, b, a);
 
-        public static Color FromRgb255(int r, int g, int b, int a = 255) =>
+        public static Color FromRGB255(int r, int g, int b, int a = 255) =>
             new(r / 255f, g / 255f, b / 255f, a / 255f);
 
         /// <summary>
@@ -73,7 +72,7 @@ namespace CLabs.Utility {
                     throw new FormatException($"Unrecognised hex colour length: '{hex}'. Expected 3, 4, 6, or 8 hex digits.");
             }
 
-            return FromRgb255(r, g, b, a);
+            return FromRGB255(r, g, b, a);
         }
 
         /// <summary>Hue in degrees [0, 360), saturation/value in [0, 1].</summary>
@@ -189,8 +188,6 @@ namespace CLabs.Utility {
             return (c, m, y, k);
         }
 
-        // --- Named colours ---
-
         public static Color White       => new(1f, 1f, 1f, 1f);
         public static Color Black       => new(0f, 0f, 0f, 1f);
         public static Color Transparent => new(0f, 0f, 0f, 0f);
@@ -201,8 +198,6 @@ namespace CLabs.Utility {
         public static Color Cyan        => new(0f, 1f, 1f, 1f);
         public static Color Magenta     => new(1f, 0f, 1f, 1f);
         public static Color Grey        => new(0.5f, 0.5f, 0.5f, 1f);
-
-        // --- Equality ---
 
         public bool Equals(Color other) =>
             R == other.R && G == other.G && B == other.B && A == other.A;

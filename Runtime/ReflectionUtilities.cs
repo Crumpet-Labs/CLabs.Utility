@@ -10,7 +10,7 @@ namespace CLabs.Utility {
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(type.IsAssignableFrom);
         }
-        
+
         public static IEnumerable<Type> GetConstructorParams(this Type type) {
             return type
                 .GetConstructors()[0]
@@ -18,13 +18,11 @@ namespace CLabs.Utility {
                 .Select(param => param.ParameterType);
         }
 
-        public static IEnumerable<Type> SelectInterfaces(this IEnumerable<Type> types) 
+        public static IEnumerable<Type> SelectInterfaces(this IEnumerable<Type> types)
             => types.Where(type => type.IsInterface);
-        
-        public static string ConvertType(string type)
-        {
-            return type switch
-            {
+
+        public static string ConvertType(string type) {
+            return type switch {
                 "System.Boolean" => "bool",
                 "System.String" => "string",
                 "System.Object" => "object",

@@ -22,6 +22,13 @@ References: _(none)_
   - `string ToJson(this byte[] bytes)`
   - `T ToObject<T>(this byte[] bytes)`
 
+### `Runtime/Common/AesEncryption.cs`
+- **interface IEncryptionAlgorithm**
+- **class sealed AesEncryption** : IEncryptionAlgorithm
+  - `byte[] Encrypt(string data, string key)`
+  - `string Decrypt(byte[] data, string key)`
+  - `string Decrypt(byte[] cipherText, string key)`
+
 ### `Runtime/Common/Color.cs`
 - **struct readonly Color** : IEquatable<Color>
   - `Color(float r, float g, float b, float a = 1f)`
@@ -39,8 +46,8 @@ References: _(none)_
   - `Color Cyan` *(property)*
   - `Color Magenta` *(property)*
   - `Color Grey` *(property)*
-  - `Color FromRgb(float r, float g, float b, float a = 1f)`
-  - `Color FromRgb255(int r, int g, int b, int a = 255)`
+  - `Color FromRGB(float r, float g, float b, float a = 1f)`
+  - `Color FromRGB255(int r, int g, int b, int a = 255)`
   - `Color FromHex(string hex)`
   - `Color FromHsv(float h, float s, float v, float a = 1f)`
   - `else if(h < 120f)`
@@ -58,12 +65,25 @@ References: _(none)_
 
 ### `Runtime/Common/OwnerId.cs`
 - **struct readonly OwnerId** : IEquatable<OwnerId>
+- **class sealed OwnerIdConverter** : TypeConverter
   - `int ID` *(property)*
   - `implicit operator int(OwnerId id)`
   - `string ToString()`
   - `int GetHashCode()`
   - `bool Equals(OwnerId other)`
   - `bool Equals(object obj)`
+  - `bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)`
+  - `bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)`
+  - `object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)`
+  - `object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)`
+
+### `Runtime/Common/StringInterner.cs`
+- **interface IStringInterner**
+- **class sealed StringInterner** : IStringInterner
+  - `string Intern(string value)`
+  - `string Intern(ReadOnlySpan<char> span)`
+  - `void Remove(string value)`
+  - `void Remove(ReadOnlySpan<char> span)`
 
 ### `Runtime/CompositeResourceProvider.cs`
 - **class sealed CompositeResourceProvider** : IResourceProvider
@@ -109,6 +129,7 @@ References: _(none)_
 
 ### `Runtime/Registry.cs`
 - **class abstract Registry<TKey, TValue>**
+- **class sealed RegistryRegistration<TKey, TValue>** : IDisposable
   - `IEnumerable<TValue> Values` *(property)*
   - `IEnumerable<TKey> Keys` *(property)*
   - `int Count` *(property)*
@@ -120,6 +141,7 @@ References: _(none)_
   - `bool TryGetValue(TKey key, out TValue value)`
   - `IEnumerable<TValue> Get(IEnumerable<TKey> keys)`
   - `bool Contains(TKey key)`
+  - `void Dispose()`
 
 ### `Runtime/StringUtils.cs`
 - **class static StringUtils**
