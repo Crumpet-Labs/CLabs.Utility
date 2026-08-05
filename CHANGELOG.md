@@ -1,15 +1,5 @@
 # Changelog
 
-## v2.0.0 — 2026-08-01
-
-### Breaking changes
-
-- move the six foundational packages into foundation/ (52fc8ba)
-
-### Fixes
-
-- a registry handle can only remove the registration it made (d3d6620)
-
 ## v1.1.0 — 2026-05-15
 
 ### Features

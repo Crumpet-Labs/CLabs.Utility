@@ -113,6 +113,11 @@ References: _(none)_
   - `void ForceDirectory(string path)`
   - `void DeleteFile(string path)`
 
+### `Runtime/IRandomSource.cs`
+- **interface IRandomSource**
+  - `float NextFloat()`
+  - `int NextInt(int minInclusive, int maxExclusive)`
+
 ### `Runtime/IResourceProvider.cs`
 - **interface IResourceProvider**
   - `bool CanHandle(IDefinition resource)`
@@ -148,6 +153,15 @@ References: _(none)_
   - `string ToPropertyName(this string value)`
   - `string ToTitleCase(this string value)`
   - `string RemoveWhiteSpace(this string value)`
+
+### `Runtime/SystemRandomSource.cs`
+- **class sealed SystemRandomSource** : IRandomSource
+- **class sealed SeededRandomSource** : IRandomSource
+- **class static SystemRandomSourceInternals**
+  - `SystemRandomSource()`
+  - `SeededRandomSource(int seed)`
+  - `float NextFloat()`
+  - `int NextInt(int minInclusive, int maxExclusive)`
 
 ### `Runtime/Utilities.cs`
 - **class sealed Disposable** : IDisposable
