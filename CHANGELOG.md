@@ -1,7 +1,6 @@
 # Changelog
 
-## v1.1.0 — 2026-05-15
-
+## v1.1.0 (2026-05-15)
 ### Features
 
 - package short descriptions added (1061962)
@@ -14,4 +13,4 @@
 - buttr-registry and added newtonsoft json (bafed5f)
 - meta files and package.json regenerated (f33edd1)
 
-## v1.0.0 — 2026-05-15
+## v1.0.0 (2026-05-15)
