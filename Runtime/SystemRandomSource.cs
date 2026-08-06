@@ -7,7 +7,7 @@ namespace CLabs.Utility {
     ///
     /// It is deliberately parameterless. Buttr resolves the constructor with the most parameters and treats
     /// every parameter as required, so a single class carrying both a parameterless and a seed-taking
-    /// constructor would be unconstructible — Buttr would pick the seed one and find no <c>int</c> to inject.
+    /// constructor would be unconstructible, since Buttr would pick the seed one and find no <c>int</c> to inject.
     /// That is why the seeded variant is its own type.
     ///
     /// Not thread-safe, because <see cref="Random"/> is not.
@@ -30,7 +30,7 @@ namespace CLabs.Utility {
 
     /// <summary>
     /// A source pinned to a seed, so the same seed replays the same sequence. Supply it through a registration
-    /// factory — <c>.WithImplementation&lt;IRandomSource&gt;(() =&gt; new SeededRandomSource(saveSeed))</c> —
+    /// factory, <c>.WithImplementation&lt;IRandomSource&gt;(() =&gt; new SeededRandomSource(saveSeed))</c>,
     /// since the seed is the game's to choose and Buttr has no <c>int</c> to resolve.
     ///
     /// Not thread-safe, and sharing one across systems couples their sequences: consuming a value in one moves
@@ -55,7 +55,7 @@ namespace CLabs.Utility {
     internal static class SystemRandomSourceInternals {
         /// <summary>
         /// The largest float below one. <see cref="Random.NextDouble"/> never returns 1.0, but a double close
-        /// enough to it rounds UP to 1.0f on the cast — about once in thirty million calls — which would hand
+        /// enough to it rounds UP to 1.0f on the cast, about once in thirty million calls, which would hand
         /// a caller a value its contract promised it would never see.
         /// </summary>
         private const float JustBelowOne = 0.99999994f;

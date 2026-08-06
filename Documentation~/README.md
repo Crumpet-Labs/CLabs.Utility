@@ -1,6 +1,6 @@
 # CLabs.Utility
 
-Engine-agnostic foundation utilities used across the CLabs ecosystem — entity identity, colour, disposables, generic registries, resource providers, reflection helpers, and small general-purpose helpers. Pure .NET, no engine references, no CLabs dependencies.
+Engine-agnostic foundation utilities used across the CLabs ecosystem: entity identity, colour, disposables, generic registries, resource providers, reflection helpers, and small general-purpose helpers. Pure .NET, no engine references, no CLabs dependencies.
 
 ## What it provides
 
@@ -10,17 +10,18 @@ Engine-agnostic foundation utilities used across the CLabs ecosystem — entity 
 | `Color` | Engine-agnostic RGBA colour struct (floats `0–1`). Factories for RGB / HSV / HSL / CMYK / Hex; conversions back via `ToHex`, `ToHsv`, `ToHsl`, `ToCmyk`; named constants (`White`, `Red`, `Transparent`, …). |
 | `Registry<TKey, TValue>` | Abstract dictionary wrapper. `Register()` returns an `IDisposable` that auto-removes the entry on dispose; exposes `Get` / `TryGet` / `Contains` / events `OnRegistered` / `OnUnregistered`. |
 | `Disposable` / `DisposableCollection` | Wraps an `Action` as `IDisposable`; aggregates multiple disposables for batch teardown. |
-| `IResourceProvider` / `CompositeResourceProvider` / `IDefinition` | Tiny resource-management abstraction — `CanHandle` / `HasResource` / `Consume` / `Grant`. Composite routes calls to the first matching provider. |
+| `IResourceProvider` / `CompositeResourceProvider` / `IDefinition` | Resource-management abstraction: `CanHandle` / `HasResource` / `Consume` / `Grant`. Composite routes calls to the first matching provider. |
 | `StringUtils` | `ToPropertyName`, `ToTitleCase`, `RemoveWhiteSpace`. |
-| `IOUtils` | `ForceDirectory(string)`, `DeleteFile(string)` — safe filesystem helpers. |
+| `IOUtils` | `ForceDirectory(string)`, `DeleteFile(string)`. Filesystem helpers that do not throw when the target is absent. |
 | `BinaryConvert` | JSON ⇄ bytes round-trip via Newtonsoft.Json. |
 | `ReflectionUtilities` | `FindImplementors`, `GetConstructorParams`, `SelectInterfaces`, `ConvertType`. |
-| `IncrementalAction` | Countdown trigger — fires its action once `Decrement()` has been called N times. |
+| `IRandomSource` | `NextFloat()` / `NextInt(minInclusive, maxExclusive)`, so randomness is injected rather than reached for statically. Ships `SystemRandomSource` (clock-seeded) and `SeededRandomSource` (reproducible). |
+| `IncrementalAction` | Countdown trigger. Fires its action once `Decrement()` has been called N times. |
 | `EnumerableExt.Complete<T>(Action<T>)` | Eagerly iterates a sequence, invoking the action on each element. |
 
 ## Installation
 
-CLabs.Utility is the foundation layer — it has no CLabs dependencies. Install it directly.
+CLabs.Utility is the foundation layer and has no CLabs dependencies. Install it directly.
 
 ### .NET projects
 
@@ -93,7 +94,7 @@ collection.Dispose();   // disposes both registrations in one call
 
 ## Unity users
 
-If you're building a Unity project, install the [CLabs.Unity](https://github.com/Crumpet-Labs/CLabs.Unity) UPM umbrella — it ships Utility together with the rest of the CLabs ecosystem plus the Unity adapters that bridge `Color` / `OwnerId` to their engine-native equivalents. This repo is for plain .NET consumers.
+If you're building a Unity project, install the [CLabs.Unity](https://github.com/Crumpet-Labs/CLabs.Unity) UPM umbrella, which ships Utility together with the rest of the CLabs ecosystem plus the Unity adapters that bridge `Color` / `OwnerId` to their engine-native equivalents. This repo is for plain .NET consumers.
 
 ## License
 

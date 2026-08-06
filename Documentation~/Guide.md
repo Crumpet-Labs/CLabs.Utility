@@ -1,4 +1,4 @@
-# CLabs.Utility — Guide
+# CLabs.Utility: Guide
 
 ## Overview
 
@@ -76,7 +76,7 @@ var collection = new DisposableCollection();
 collection.Add(registry.Register("a", dataA));
 collection.Add(registry.Register("b", dataB));
 
-// Teardown — removes both entries
+// Teardown: removes both entries
 collection.Dispose();
 ```
 

@@ -15,7 +15,7 @@ namespace CLabs.Utility {
 
         /// <summary>
         /// A value in <c>[minInclusive, maxExclusive)</c>. An empty or inverted range returns
-        /// <paramref name="minInclusive"/> rather than throwing — callers derive these bounds from authored
+        /// <paramref name="minInclusive"/> rather than throwing, because callers derive these bounds from authored
         /// data, where a min above a max is a content mistake and not worth an exception.
         /// </summary>
         int NextInt(int minInclusive, int maxExclusive);

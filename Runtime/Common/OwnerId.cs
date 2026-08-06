@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace CLabs.Utility {
     /// <summary>
-    /// Identifies whoever owns some piece of game state — an entity, a container, a player. The
+    /// Identifies whoever owns some piece of game state: an entity, a container, a player. The
     /// <see cref="TypeConverter"/> is load-bearing for persistence: the constructor is private and <see cref="ID"/> is
     /// get-only, so without it a serializer writes <c>{"ID":7}</c> and silently reads back <c>default</c>. Every package
     /// snapshot keyed by an owner (Equipment, Inventory, …) depends on this round-tripping as a bare number.

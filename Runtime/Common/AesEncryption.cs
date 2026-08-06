@@ -73,7 +73,7 @@ namespace CLabs.Utility {
             var calculatedHmac = hmac.ComputeHash(encryptedData);
 
             if (false == storedHmac.SequenceEqual(calculatedHmac)) {
-                throw new CryptographicException("Data integrity check failed — data may be tampered with.");
+                throw new CryptographicException("Data integrity check failed; data may be tampered with.");
             }
 
             using var aes = Aes.Create();
